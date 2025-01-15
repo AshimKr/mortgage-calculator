@@ -1,114 +1,222 @@
 import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
+import { useState } from "react";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+export default function MortgageCalculator() {
+  // States for form data, results, and errors
+  const [formData, setFormData] = useState({
+    amount: "",
+    term: "",
+    rate: "",
+    type: "repayment",
+  });
+  const [results, setResults] = useState(null);
+  const [errors, setErrors] = useState({});
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+  // Form validation function
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.amount) newErrors.amount = "Mortgage amount is required.";
+    if (!formData.term) newErrors.term = "Mortgage term is required.";
+    if (!formData.rate) newErrors.rate = "Interest rate is required.";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-export default function Home() {
+  // Calculation function
+  const calculateRepayment = (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    const { amount, term, rate, type } = formData;
+    const principal = parseFloat(amount);
+    const monthlyRate = parseFloat(rate) / 100 / 12;
+    const months = parseInt(term) * 12;
+
+    let monthlyPayment;
+    if (type === "repayment") {
+      monthlyPayment =
+        (principal * monthlyRate) /
+        (1 - Math.pow(1 + monthlyRate, -months));
+    } else {
+      monthlyPayment = principal * monthlyRate;
+    }
+
+    setResults({
+      monthly: monthlyPayment.toFixed(2),
+      total: (monthlyPayment * months).toFixed(2),
+    });
+  };
+
+  // Handle input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
   return (
-    <div
-      className={`${geistSans.variable} ${geistMono.variable} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/pages/index.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen bg-slate-100 flex items-center justify-center px-6">
+      <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-4xl flex flex-col lg:flex-row gap-6">
+        {/* Form Section */}
+        <form className="w-full lg:w-1/2" onSubmit={calculateRepayment}>
+          <h1 className="text-2xl font-bold text-slate-900 mb-6">Mortgage Calculator</h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          {/* Mortgage Amount */}
+          <div className="mb-4">
+            <label className="block text-slate-700 font-medium mb-1">Mortgage Amount (£)</label>
+            <div className="relative flex items-center">
+              <span className="absolute left-0 bg-lime-500 text-slate-700 text-lg h-full flex items-center justify-center px-3 rounded-l">
+                £
+              </span>
+              <input
+                type="number"
+                name="amount"
+                value={formData.amount}
+                onChange={handleChange}
+                className={`w-full pl-12 p-3 border ${
+                  errors.amount ? "border-red-500" : "border-slate-300"
+                } rounded-r bg-white text-slate-900 focus:outline-none focus:border-lime-600`}
+              />
+            </div>
+            {errors.amount && <p className="text-red-500 text-sm mt-1">{errors.amount}</p>}
+          </div>
+
+          {/* Mortgage Term */}
+          <div className="mb-4">
+            <label className="block text-slate-700 font-medium">Mortgage Term (years)</label>
+            <input
+              type="number"
+              name="term"
+              value={formData.term}
+              onChange={handleChange}
+              className={`w-full p-3 mt-1 border ${
+                errors.term ? "border-red-500" : "border-slate-300"
+              } rounded bg-white text-slate-900 focus:outline-none focus:border-lime-600`}
+            />
+            {errors.term && <p className="text-red-500 text-sm mt-1">{errors.term}</p>}
+          </div>
+
+          {/* Interest Rate */}
+          <div className="mb-4">
+            <label className="block text-slate-700 font-medium">Interest Rate (%)</label>
+            <input
+              type="number"
+              step="0.01"
+              name="rate"
+              value={formData.rate}
+              onChange={handleChange}
+              className={`w-full p-3 mt-1 border ${
+                errors.rate ? "border-red-500" : "border-slate-300"
+              } rounded bg-white text-slate-900 focus:outline-none focus:border-lime-600`}
+            />
+            {errors.rate && <p className="text-red-500 text-sm mt-1">{errors.rate}</p>}
+          </div>
+
+          {/* Mortgage Type */}
+          <div className="mb-6">
+            <label className="block text-slate-700 font-medium mb-2">Mortgage Type</label>
+            <div className="flex flex-col gap-4">
+              <label
+                className={`flex items-center gap-3 p-3 rounded-lg border-2 ${
+                  formData.type === "repayment"
+                    ? "bg-slate-100 border-lime-500"
+                    : "border-slate-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="type"
+                  value="repayment"
+                  checked={formData.type === "repayment"}
+                  onChange={handleChange}
+                  className="form-radio h-5 w-5 text-lime-500 focus:ring-lime-500"
+                />
+                <span
+                  className={`font-medium ${
+                    formData.type === "repayment"
+                      ? "text-slate-900"
+                      : "text-slate-700"
+                  }`}
+                >
+                  Repayment
+                </span>
+              </label>
+
+              <label
+                className={`flex items-center gap-3 p-3 rounded-lg border-2 ${
+                  formData.type === "interest-only"
+                    ? "bg-slate-100 border-lime-500"
+                    : "border-slate-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="type"
+                  value="interest-only"
+                  checked={formData.type === "interest-only"}
+                  onChange={handleChange}
+                  className="form-radio h-5 w-5 text-lime-500 focus:ring-lime-500"
+                />
+                <span
+                  className={`font-medium ${
+                    formData.type === "interest-only"
+                      ? "text-slate-900"
+                      : "text-slate-700"
+                  }`}
+                >
+                  Interest Only
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="flex items-center justify-center bg-lime-500 hover:bg-lime-600 text-white font-medium py-3 px-6 rounded w-full"
           >
             <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+              src="https://raw.githubusercontent.com/Codesauna/mortgage-repayment-calculator-main/d016392416ac9dde376a3782397e4309d0cccb3e/assets/images/icon-calculator.svg"
+              alt="Calculator Icon"
+              width={24}
+              height={24}
+              className="mr-2"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            Calculate Repayments
+          </button>
+        </form>
+
+        {/* Results Section */}
+        <div className="w-full lg:w-1/2 bg-slate-900 text-white rounded-lg p-6 flex flex-col items-center justify-center">
+          {results ? (
+            <div className="text-start">
+              <p className="text-xl mb-3 font-bold">Your results</p>
+              <p className="text-sm text-slate-500 mb-10">
+                Your results are shown below based on the information you provided. To adjust the results, edit the form and click &quot;calculate repayments&quot; again.
+              </p>
+              <div className="w-full bg-slate-800 text-white rounded-lg p-4 mb-4">
+                <p className="text-md text-slate-500 mb-2">Your monthly repayments</p>
+                <p className="text-3xl font-bold text-yellow-500">£{results.monthly}</p>
+              </div>
+              <div className="w-full bg-slate-800 text-white rounded-lg p-4">
+                <p className="text-md text-slate-500 mb-2">Total you&apos;ll repay over the term</p>
+                <p className="text-xl font-bold text-yellow-500">£{results.total}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center text-center">
+              <Image
+                src="https://raw.githubusercontent.com/Codesauna/mortgage-repayment-calculator-main/d016392416ac9dde376a3782397e4309d0cccb3e/assets/images/illustration-empty.svg"
+                alt="Results placeholder"
+                width={128}
+                height={128}
+                className="mb-4"
+              />
+              <h1 className="text-slate-300 mb-2">Results shown here</h1>
+              <small>Complete the form and click &quot;calculate repayments&quot; to see what your monthly repayments would be.</small>
+            </div>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
   );
 }
